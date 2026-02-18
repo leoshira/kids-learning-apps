@@ -32,7 +32,7 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 #game-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,2vw,20px);width:100%;position:relative}
 
 /* UPDATED: Image display instead of emoji */
-#image-display{width:clamp(120px,25vw,200px);height:clamp(120px,25vw,200px);animation:float 2.5s ease-in-out infinite;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.9);box-shadow:0 4px 16px rgba(0,0,0,0.1);overflow:hidden}
+#image-display{width:clamp(160px,35vw,300px);height:clamp(160px,35vw,300px);animation:float 2.5s ease-in-out infinite;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.9);box-shadow:0 4px 16px rgba(0,0,0,0.1);overflow:hidden}
 #main-image{width:80%;height:80%;object-fit:contain;transition:transform .3s}
 #main-image.error{display:none}
 #fallback-emoji{display:none;font-size:clamp(60px,15vw,100px);animation:float 2.5s ease-in-out infinite}
@@ -79,7 +79,7 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 /* UPDATED: Image-based celebration overlay */
 #celebration{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:200;pointer-events:none}
 #celebration.active{display:flex}
-#celebration img{max-width:clamp(150px,40vw,300px);max-height:clamp(100px,25vh,200px);object-fit:contain;animation:celebBounce .6s}
+#celebration img{max-width:clamp(200px,50vw,400px);max-height:clamp(150px,35vh,300px);object-fit:contain;animation:celebBounce .6s}
 #celebration .big-emoji{font-size:clamp(100px,30vw,200px);animation:celebBounce .6s}
 @keyframes celebBounce{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
 
