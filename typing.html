@@ -68,6 +68,7 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 @keyframes sparkleAnim{0%{opacity:1;transform:scale(0) rotate(0)}50%{opacity:1;transform:scale(1.2) rotate(180deg)}100%{opacity:0;transform:scale(0) rotate(360deg) translateY(-40px)}}
 
 .confetti-particle{animation:confettiFall 1.5s forwards}
+@keyframes emojiRain{0%{opacity:1;transform:translateY(-60px) rotate(0)}100%{opacity:0;transform:translateY(100vh) rotate(360deg)}}
 @keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0) scale(1)}100%{opacity:0;transform:translateY(100vh) rotate(720deg) scale(0.5)}}
 
 .rain-particle{font-size:clamp(30px,8vw,50px);z-index:90;animation:particleRain 2s forwards}
@@ -327,58 +328,53 @@ function stopBGM() {
 }
 
 // ====== UPDATED: Image-based effects ======
-function spawnImageParticles(x, y, images, count = 6, animationClass = 'sparkle') {
+function spawnSparkles(x, y, count = 6) {
+  const emojis = ['✨','⭐','🌟','💫','🎀'];
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = `particle ${animationClass}`;
-    
-    const img = document.createElement('img');
-    img.src = images[Math.floor(Math.random() * images.length)];
-    img.alt = '';
-    el.appendChild(img);
-    
+    el.className = 'sparkle-emoji';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
     el.style.left = (x + (Math.random() - 0.5) * 80) + 'px';
     el.style.top = (y + (Math.random() - 0.5) * 80) + 'px';
+    el.style.position = 'fixed';
+    el.style.pointerEvents = 'none';
+    el.style.fontSize = '24px';
+    el.style.zIndex = '100';
+    el.style.animation = 'sparkleAnim .8s forwards';
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 800);
   }
 }
 
-function spawnImageConfetti(count = 30) {
+function spawnConfetti(count = 30) {
+  const colors = ['#ff6b9d','#ffd93d','#6bcb77','#4d96ff','#ff6b6b','#c084fc'];
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = 'particle confetti-particle';
-    
-    const img = document.createElement('img');
-    img.src = effectImages.confetti[Math.floor(Math.random() * effectImages.confetti.length)];
-    img.alt = '';
-    el.appendChild(img);
-    
+    el.style.position = 'fixed';
+    el.style.pointerEvents = 'none';
+    el.style.zIndex = '100';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.borderRadius = '50%';
     el.style.left = Math.random() * 100 + 'vw';
     el.style.top = '-10px';
-    el.style.width = (16 + Math.random() * 16) + 'px';
-    el.style.height = (16 + Math.random() * 16) + 'px';
-    el.style.animationDuration = (1 + Math.random()) + 's';
-    el.style.animationDelay = (Math.random() * 0.5) + 's';
+    el.style.width = (6 + Math.random() * 8) + 'px';
+    el.style.height = (6 + Math.random() * 8) + 'px';
+    el.style.animation = `confettiFall ${1 + Math.random()}s ${Math.random() * 0.5}s forwards`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 2500);
   }
 }
 
-function imageRain(imagePath, count = 8) {
+function emojiRain(emoji, count = 8) {
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = 'particle rain-particle';
-    
-    const img = document.createElement('img');
-    img.src = imagePath;
-    img.alt = '';
-    img.style.width = 'clamp(30px,8vw,50px)';
-    img.style.height = 'clamp(30px,8vw,50px)';
-    el.appendChild(img);
-    
+    el.textContent = emoji;
+    el.style.position = 'fixed';
+    el.style.pointerEvents = 'none';
+    el.style.fontSize = 'clamp(30px,8vw,50px)';
+    el.style.zIndex = '90';
     el.style.left = (10 + Math.random() * 80) + 'vw';
-    el.style.animationDelay = (Math.random() * 0.8) + 's';
+    el.style.animation = `emojiRain 2s ${Math.random() * 0.8}s forwards`;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 2800);
   }
@@ -550,7 +546,7 @@ function handleKey(ch) {
     // UPDATED: Image-based sparkles
     const container = document.getElementById('image-display');
     const r = container.getBoundingClientRect();
-    spawnImageParticles(r.left + r.width / 2, r.top + r.height / 2, effectImages.sparkles, 4);
+    spawnSparkles(r.left + r.width / 2, r.top + r.height / 2, 4);
 
     // Bounce animation
     const mainImg = document.getElementById('main-image');
@@ -582,32 +578,24 @@ function handleKey(ch) {
 function wordComplete(item) {
   highlightKey('');
   playCelebration();
-  spawnImageConfetti(40);
+  spawnConfetti(40);
 
   // UPDATED: Theme-specific image effects
-  if (currentTheme === 'fruits') imageRain(item.img, 10);
+  if (currentTheme === 'fruits') emojiRain(item.e, 10);
   else if (currentTheme === 'animals') { 
     animalRun(item.e); 
-    imageRain(item.img, 5); 
+    emojiRain(item.e, 5); 
   }
-  else { imageRain(item.img, 12); }
+  else { emojiRain(item.e, 12); }
 
   // UPDATED: Show image-based celebration
   const cel = document.getElementById('celebration');
   const celImg = document.getElementById('celebration-image');
   const celEmoji = cel.querySelector('.big-emoji');
   
-  preloadImage(effectImages.celebration)
-    .then(() => {
-      celImg.src = effectImages.celebration;
-      celImg.style.display = 'block';
-      celEmoji.style.display = 'none';
-    })
-    .catch(() => {
-      celImg.style.display = 'none';
-      celEmoji.textContent = '🎉';
-      celEmoji.style.display = 'block';
-    });
+  celImg.style.display = 'none';
+  celEmoji.textContent = item.e;
+  celEmoji.style.display = 'block';
     
   cel.classList.add('active');
 
