@@ -3,14 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<script>
-(function(){
-  if(sessionStorage.getItem('kids_authed')==='1')return;
-  var p=prompt('パスワードをいれてね');
-  if(p==='12321'){sessionStorage.setItem('kids_authed','1')}
-  else{document.documentElement.innerHTML='<body style="display:flex;align-items:center;justify-content:center;height:100vh;background:#a18cd1;color:#fff;font-family:sans-serif;font-size:1.5rem">🔒 パスワードがちがうよ。もういちどためしてね！</body>';throw'auth'}
-})();
-</script>
 <title>🎮 タイピングキッズ</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -19,6 +11,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI Emoji','A
 body{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .6s}
 .screen{display:none;width:100%;height:100%;flex-direction:column;align-items:center;position:relative}
 .screen.active{display:flex}
+
 /* MENU */
 #menu{justify-content:center;gap:clamp(16px,4vw,32px);padding:20px}
 .menu-btn{border:none;border-radius:28px;padding:clamp(20px,5vw,40px) clamp(30px,8vw,60px);font-size:clamp(48px,12vw,100px);cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 8px 0 rgba(0,0,0,.12);position:relative;animation:bob 2s ease-in-out infinite}
@@ -27,6 +20,7 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 .menu-btn:nth-child(3){background:linear-gradient(135deg,#fff3d4,#ffe8a3);animation-delay:.6s}
 .menu-btn:active{transform:scale(.92);box-shadow:0 4px 0 rgba(0,0,0,.12)}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
 /* GAME */
 #game{justify-content:space-between;padding:10px}
 #top-bar{display:flex;width:100%;justify-content:space-between;align-items:center;padding:0 12px;height:50px;z-index:10}
@@ -34,17 +28,28 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 .icon-btn:active{background:rgba(0,0,0,.08)}
 #star-count{font-size:28px;font-weight:bold;color:#ffa500;display:flex;align-items:center;gap:4px}
 #star-count .star-icon{font-size:32px;display:inline-block}
+
 #game-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(8px,2vw,20px);width:100%;position:relative}
-#emoji-display{font-size:clamp(80px,22vw,180px);animation:float 2.5s ease-in-out infinite;position:relative;z-index:2;line-height:1.1}
+
+/* UPDATED: Image display instead of emoji */
+#image-display{width:clamp(120px,25vw,200px);height:clamp(120px,25vw,200px);animation:float 2.5s ease-in-out infinite;position:relative;z-index:2;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.9);box-shadow:0 4px 16px rgba(0,0,0,0.1);overflow:hidden}
+#main-image{width:80%;height:80%;object-fit:contain;transition:transform .3s}
+#main-image.error{display:none}
+#fallback-emoji{display:none;font-size:clamp(60px,15vw,100px);animation:float 2.5s ease-in-out infinite}
+#fallback-emoji.show{display:block}
+
 @keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.03)}}
+
 #word-display{display:flex;gap:clamp(4px,1.5vw,12px);font-size:clamp(36px,9vw,72px);font-weight:900;letter-spacing:2px;min-height:1.2em}
 .letter{display:inline-block;transition:all .2s;color:#e0d0d0;position:relative}
 .letter.typed{color:var(--accent);animation:popIn .3s}
 .letter.current{color:#333;animation:pulse 1s infinite;transform:scale(1.15)}
 @keyframes popIn{0%{transform:scale(1.5) rotate(-5deg)}50%{transform:scale(.9)}100%{transform:scale(1)}}
 @keyframes pulse{0%,100%{transform:scale(1.15)}50%{transform:scale(1.3)}}
+
 #progress-bar{width:80%;max-width:400px;height:14px;background:#f0e0e0;border-radius:7px;overflow:hidden}
 #progress-fill{height:100%;background:linear-gradient(90deg,#ff9a9e,#fad0c4,#a8edea);border-radius:7px;transition:width .3s;width:0}
+
 /* KEYBOARD */
 #keyboard{width:100%;max-width:700px;padding:0 4px 10px;display:flex;flex-direction:column;gap:clamp(4px,1vw,8px);align-self:center}
 .kb-row{display:flex;justify-content:center;gap:clamp(3px,.8vw,6px)}
@@ -55,25 +60,38 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 .key.wrong-flash{animation:shake .3s}
 @keyframes keyPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-/* EFFECTS */
-.sparkle{position:fixed;pointer-events:none;font-size:24px;z-index:100;animation:sparkleAnim .8s forwards}
+
+/* UPDATED: Image-based effects */
+.particle{position:fixed;pointer-events:none;z-index:100;width:24px;height:24px}
+.particle img{width:100%;height:100%;object-fit:contain}
+.sparkle{animation:sparkleAnim .8s forwards}
 @keyframes sparkleAnim{0%{opacity:1;transform:scale(0) rotate(0)}50%{opacity:1;transform:scale(1.2) rotate(180deg)}100%{opacity:0;transform:scale(0) rotate(360deg) translateY(-40px)}}
-.confetti{position:fixed;width:10px;height:10px;border-radius:50%;z-index:100;pointer-events:none;animation:confettiFall 1.5s forwards}
-@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0) scale(1)}100%{opacity:0;transform:translateY(100vh) rotate(720deg) scale(0)}}
-.rain-emoji{position:fixed;font-size:clamp(30px,8vw,50px);z-index:90;pointer-events:none;animation:emojiRain 2s forwards}
-@keyframes emojiRain{0%{opacity:1;transform:translateY(-60px) rotate(0)}100%{opacity:0;transform:translateY(100vh) rotate(360deg)}}
+
+.confetti-particle{animation:confettiFall 1.5s forwards}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0) scale(1)}100%{opacity:0;transform:translateY(100vh) rotate(720deg) scale(0.5)}}
+
+.rain-particle{font-size:clamp(30px,8vw,50px);z-index:90;animation:particleRain 2s forwards}
+@keyframes particleRain{0%{opacity:1;transform:translateY(-60px) rotate(0)}100%{opacity:0;transform:translateY(100vh) rotate(360deg)}}
+
 .run-emoji{position:fixed;font-size:60px;z-index:90;pointer-events:none;bottom:20%}
 @keyframes runAcross{0%{left:-80px;transform:scaleX(1)}49%{transform:scaleX(1)}50%{left:50%;transform:scaleX(1)}100%{left:110%;transform:scaleX(1)}}
-/* CELEBRATION OVERLAY */
+
+/* UPDATED: Image-based celebration overlay */
 #celebration{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:200;pointer-events:none}
 #celebration.active{display:flex}
+#celebration img{max-width:clamp(150px,40vw,300px);max-height:clamp(100px,25vh,200px);object-fit:contain;animation:celebBounce .6s}
 #celebration .big-emoji{font-size:clamp(100px,30vw,200px);animation:celebBounce .6s}
 @keyframes celebBounce{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+
 /* STAR ANIMATION */
 .star-fly{position:fixed;font-size:36px;z-index:300;pointer-events:none;animation:starFly 1s forwards}
 @keyframes starFly{0%{opacity:1;transform:scale(2)}100%{opacity:0;transform:scale(.5) translateY(-60px)}}
 #star-burst{display:inline-block}
 @keyframes starBurst{0%{transform:scale(1)}50%{transform:scale(1.6) rotate(20deg)}100%{transform:scale(1)}}
+
+/* Loading and error states */
+.loading{opacity:0.7;filter:blur(2px)}
+.error{opacity:0.3;filter:grayscale(1)}
 </style>
 </head>
 <body>
@@ -83,6 +101,7 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 <button class="menu-btn" onclick="startGame('animals')">🐶</button>
 <button class="menu-btn" onclick="startGame('sounds')">🎵</button>
 </div>
+
 <!-- GAME SCREEN -->
 <div id="game" class="screen">
 <div id="top-bar">
@@ -91,26 +110,35 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 <div id="star-count"><span id="star-burst" class="star-icon">⭐</span><span id="star-num">0</span></div>
 </div>
 <div id="game-area">
-<div id="emoji-display"></div>
+<!-- UPDATED: Image display with fallback -->
+<div id="image-display">
+<img id="main-image" alt="" style="display:none;">
+<div id="fallback-emoji"></div>
+</div>
 <div id="word-display"></div>
 <div id="progress-bar"><div id="progress-fill"></div></div>
 </div>
 <div id="keyboard"></div>
 <button class="icon-btn" style="position:absolute;bottom:8px;right:12px;font-size:28px" id="music-toggle" onclick="toggleMusic()">🔇</button>
 </div>
-<div id="celebration"><div class="big-emoji"></div></div>
+
+<!-- UPDATED: Image-based celebration -->
+<div id="celebration">
+<img id="celebration-image" alt="" style="display:none;">
+<div class="big-emoji"></div>
+</div>
 
 <script>
-// ====== DATA ======
+// ====== UPDATED DATA WITH IMAGE PATHS ======
 const themes = {
   fruits: {
     bg: '#fff0f3',
     accent: '#ff6b9d',
     words: [
-      {w:'fig',e:'🍈'},{w:'kiwi',e:'🥝'},{w:'pear',e:'🍐'},{w:'plum',e:'🍑'},
-      {w:'apple',e:'🍎'},{w:'grape',e:'🍇'},{w:'peach',e:'🍑'},{w:'melon',e:'🍈'},
-      {w:'lemon',e:'🍋'},{w:'mango',e:'🥭'},{w:'banana',e:'🍌'},{w:'cherry',e:'🍒'},
-      {w:'orange',e:'🍊'},{w:'coconut',e:'🥥'},{w:'strawberry',e:'🍓'}
+      {w:'fig',e:'🍈',img:'images/fig.png'},{w:'kiwi',e:'🥝',img:'images/kiwi.png'},{w:'pear',e:'🍐',img:'images/pear.png'},{w:'plum',e:'🍇',img:'images/plum.png'},
+      {w:'apple',e:'🍎',img:'images/apple.png'},{w:'grape',e:'🍇',img:'images/grape.png'},{w:'peach',e:'🍑',img:'images/peach.png'},{w:'melon',e:'🍈',img:'images/melon.png'},
+      {w:'lemon',e:'🍋',img:'images/lemon.png'},{w:'mango',e:'🥭',img:'images/mango.png'},{w:'banana',e:'🍌',img:'images/banana.png'},{w:'cherry',e:'🍒',img:'images/cherry.png'},
+      {w:'orange',e:'🍊',img:'images/orange.png'},{w:'coconut',e:'🥥',img:'images/coconut.png'},{w:'strawberry',e:'🍓',img:'images/strawberry.png'}
     ],
     icon:'🍎'
   },
@@ -118,10 +146,10 @@ const themes = {
     bg: '#f0f8ff',
     accent: '#5b9bd5',
     words: [
-      {w:'cat',e:'🐱'},{w:'dog',e:'🐶'},{w:'pig',e:'🐷'},{w:'cow',e:'🐮'},
-      {w:'bird',e:'🐦'},{w:'fish',e:'🐟'},{w:'bear',e:'🐻'},{w:'lion',e:'🦁'},
-      {w:'frog',e:'🐸'},{w:'duck',e:'🦆'},{w:'bunny',e:'🐰'},{w:'mouse',e:'🐭'},
-      {w:'horse',e:'🐴'},{w:'monkey',e:'🐵'},{w:'penguin',e:'🐧'}
+      {w:'cat',e:'🐱',img:'images/cat.png'},{w:'dog',e:'🐶',img:'images/dog.png'},{w:'pig',e:'🐷',img:'images/pig.png'},{w:'cow',e:'🐮',img:'images/cow.png'},
+      {w:'bird',e:'🐦',img:'images/bird.png'},{w:'fish',e:'🐟',img:'images/fish.png'},{w:'bear',e:'🐻',img:'images/bear.png'},{w:'lion',e:'🦁',img:'images/lion.png'},
+      {w:'frog',e:'🐸',img:'images/frog.png'},{w:'duck',e:'🦆',img:'images/duck.png'},{w:'bunny',e:'🐰',img:'images/bunny.png'},{w:'mouse',e:'🐭',img:'images/mouse.png'},
+      {w:'horse',e:'🐴',img:'images/horse.png'},{w:'monkey',e:'🐵',img:'images/monkey.png'},{w:'penguin',e:'🐧',img:'images/penguin.png'}
     ],
     icon:'🐶'
   },
@@ -129,27 +157,75 @@ const themes = {
     bg: '#fff8e8',
     accent: '#ffa726',
     words: [
-      {w:'pop',e:'💥'},{w:'bam',e:'💢'},{w:'boom',e:'💣'},{w:'bang',e:'🔫'},
-      {w:'ding',e:'🔔'},{w:'buzz',e:'🐝'},{w:'beep',e:'🤖'},{w:'ring',e:'📞'},
-      {w:'zoom',e:'🏎️'},{w:'crash',e:'💥'},{w:'splash',e:'💦'},{w:'clang',e:'🔨'},
-      {w:'whoosh',e:'🌪️'},{w:'sizzle',e:'🔥'},{w:'crackle',e:'⚡'}
+      {w:'pop',e:'💥',img:'images/pop.png'},{w:'bam',e:'💢',img:'images/bam.png'},{w:'boom',e:'💣',img:'images/boom.png'},{w:'bang',e:'🔫',img:'images/bang.png'},
+      {w:'ding',e:'🔔',img:'images/ding.png'},{w:'buzz',e:'🐝',img:'images/buzz.png'},{w:'beep',e:'🤖',img:'images/beep.png'},{w:'ring',e:'📞',img:'images/ring.png'},
+      {w:'zoom',e:'🏎️',img:'images/zoom.png'},{w:'crash',e:'💥',img:'images/crash.png'},{w:'splash',e:'💦',img:'images/splash.png'},{w:'clang',e:'🔨',img:'images/clang.png'},
+      {w:'whoosh',e:'🌪️',img:'images/whoosh.png'},{w:'sizzle',e:'🔥',img:'images/sizzle.png'},{w:'crackle',e:'⚡',img:'images/crackle.png'}
     ],
     icon:'🎵'
   }
 };
+
+// Effect image paths
+const effectImages = {
+  sparkles: ['images/sparkle1.png', 'images/sparkle2.png', 'images/sparkle3.png', 'images/sparkle4.png'],
+  stars: ['images/star1.png', 'images/star2.png', 'images/star3.png'],
+  confetti: ['images/confetti1.png', 'images/confetti2.png', 'images/confetti3.png', 'images/confetti4.png'],
+  celebration: 'images/celebration.png',
+  perfect: 'images/perfect.png'
+};
+
 const kbRows = ['qwertyuiop','asdfghjkl','zxcvbnm'];
 
 // ====== STATE ======
 let currentTheme = null, currentWords = [], wordIdx = 0, charIdx = 0, stars = 0, musicOn = false, bgmOsc = null, bgmGain = null;
 let audioCtx = null;
+let imageCache = new Map(); // Image preloading cache
 
+// ====== IMAGE PRELOADING ======
+function preloadImage(src) {
+  return new Promise((resolve, reject) => {
+    if (imageCache.has(src)) {
+      resolve(imageCache.get(src));
+      return;
+    }
+    
+    const img = new Image();
+    img.onload = () => {
+      imageCache.set(src, img);
+      resolve(img);
+    };
+    img.onerror = () => {
+      console.warn(`Failed to load image: ${src}`);
+      reject(new Error(`Failed to load ${src}`));
+    };
+    img.src = src;
+  });
+}
+
+function preloadThemeImages(themeName) {
+  const theme = themes[themeName];
+  const promises = theme.words.map(word => preloadImage(word.img));
+  
+  // Also preload effect images
+  const effectPromises = [
+    ...effectImages.sparkles.map(preloadImage),
+    ...effectImages.stars.map(preloadImage), 
+    ...effectImages.confetti.map(preloadImage),
+    preloadImage(effectImages.celebration),
+    preloadImage(effectImages.perfect)
+  ];
+  
+  return Promise.allSettled([...promises, ...effectPromises]);
+}
+
+// ====== AUDIO FUNCTIONS (unchanged) ======
 function getAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
 
-// ====== STARS PERSISTENCE ======
 stars = parseInt(localStorage.getItem('typing_kids_stars') || '0');
 function saveStars() { localStorage.setItem('typing_kids_stars', stars); }
 function addStar(x, y) {
@@ -160,7 +236,6 @@ function addStar(x, y) {
   s.style.animation = 'none';
   s.offsetHeight;
   s.style.animation = 'starBurst .4s';
-  // fly star from position
   const el = document.createElement('div');
   el.className = 'star-fly';
   el.textContent = '⭐';
@@ -170,7 +245,6 @@ function addStar(x, y) {
   setTimeout(() => el.remove(), 1000);
 }
 
-// ====== AUDIO SYNTHESIS ======
 function playNote(freq, dur = 0.15, type = 'triangle', vol = 0.3) {
   const ctx = getAudio();
   const o = ctx.createOscillator();
@@ -185,29 +259,24 @@ function playNote(freq, dur = 0.15, type = 'triangle', vol = 0.3) {
 }
 
 function playCorrect(idx, total) {
-  // ascending scale note
   const baseFreq = 440;
   const scale = [0, 2, 4, 5, 7, 9, 11, 12];
   const semitone = scale[idx % scale.length] + Math.floor(idx / scale.length) * 12;
   playNote(baseFreq * Math.pow(2, semitone / 12), 0.2, 'triangle', 0.25);
 }
 
-function playWrong() {
-  playNote(180, 0.2, 'sine', 0.1);
-}
-
+function playWrong() { playNote(180, 0.2, 'sine', 0.1); }
 function playCelebration() {
   const ctx = getAudio();
   const notes = [523, 659, 784, 1047];
   notes.forEach((f, i) => {
     setTimeout(() => playNote(f, 0.3, 'triangle', 0.2), i * 120);
   });
-  // extra sparkle
   setTimeout(() => playNote(1318, 0.5, 'sine', 0.15), 500);
 }
 
 function playThemeSound(theme) {
-  if (theme === 'fruits') playNote(880, 0.1, 'sine', 0.2); // pop
+  if (theme === 'fruits') playNote(880, 0.1, 'sine', 0.2);
   else if (theme === 'animals') {
     playNote(300, 0.15, 'sawtooth', 0.1);
     setTimeout(() => playNote(400, 0.15, 'sawtooth', 0.1), 80);
@@ -224,7 +293,6 @@ function speakWord(word) {
   }
 }
 
-// ====== BGM ======
 function toggleMusic() {
   musicOn = !musicOn;
   document.getElementById('music-toggle').textContent = musicOn ? '🔊' : '🔇';
@@ -236,7 +304,6 @@ function startBGM() {
   bgmGain = ctx.createGain();
   bgmGain.gain.value = 0.04;
   bgmGain.connect(ctx.destination);
-  // simple arpeggio loop
   const melody = [262,294,330,349,392,349,330,294];
   let i = 0;
   function tick() {
@@ -259,13 +326,17 @@ function stopBGM() {
   if (bgmOsc) { clearTimeout(bgmOsc); bgmOsc = null; }
 }
 
-// ====== EFFECTS ======
-function spawnSparkles(x, y, count = 6) {
-  const emojis = ['✨','⭐','🌟','💫','🎀'];
+// ====== UPDATED: Image-based effects ======
+function spawnImageParticles(x, y, images, count = 6, animationClass = 'sparkle') {
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = 'sparkle';
-    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.className = `particle ${animationClass}`;
+    
+    const img = document.createElement('img');
+    img.src = images[Math.floor(Math.random() * images.length)];
+    img.alt = '';
+    el.appendChild(img);
+    
     el.style.left = (x + (Math.random() - 0.5) * 80) + 'px';
     el.style.top = (y + (Math.random() - 0.5) * 80) + 'px';
     document.body.appendChild(el);
@@ -273,16 +344,20 @@ function spawnSparkles(x, y, count = 6) {
   }
 }
 
-function spawnConfetti(count = 30) {
-  const colors = ['#ff6b9d','#ffd93d','#6bcb77','#4d96ff','#ff6b6b','#c084fc'];
+function spawnImageConfetti(count = 30) {
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = 'confetti';
-    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.className = 'particle confetti-particle';
+    
+    const img = document.createElement('img');
+    img.src = effectImages.confetti[Math.floor(Math.random() * effectImages.confetti.length)];
+    img.alt = '';
+    el.appendChild(img);
+    
     el.style.left = Math.random() * 100 + 'vw';
     el.style.top = '-10px';
-    el.style.width = (6 + Math.random() * 8) + 'px';
-    el.style.height = (6 + Math.random() * 8) + 'px';
+    el.style.width = (16 + Math.random() * 16) + 'px';
+    el.style.height = (16 + Math.random() * 16) + 'px';
     el.style.animationDuration = (1 + Math.random()) + 's';
     el.style.animationDelay = (Math.random() * 0.5) + 's';
     document.body.appendChild(el);
@@ -290,11 +365,18 @@ function spawnConfetti(count = 30) {
   }
 }
 
-function emojiRain(emoji, count = 8) {
+function imageRain(imagePath, count = 8) {
   for (let i = 0; i < count; i++) {
     const el = document.createElement('div');
-    el.className = 'rain-emoji';
-    el.textContent = emoji;
+    el.className = 'particle rain-particle';
+    
+    const img = document.createElement('img');
+    img.src = imagePath;
+    img.alt = '';
+    img.style.width = 'clamp(30px,8vw,50px)';
+    img.style.height = 'clamp(30px,8vw,50px)';
+    el.appendChild(img);
+    
     el.style.left = (10 + Math.random() * 80) + 'vw';
     el.style.animationDelay = (Math.random() * 0.8) + 's';
     document.body.appendChild(el);
@@ -311,7 +393,7 @@ function animalRun(emoji) {
   setTimeout(() => el.remove(), 1600);
 }
 
-// ====== KEYBOARD ======
+// ====== KEYBOARD (unchanged) ======
 function buildKeyboard() {
   const kb = document.getElementById('keyboard');
   kb.innerHTML = '';
@@ -346,7 +428,7 @@ function flashKey(ch, cls) {
   setTimeout(() => k.classList.remove(cls), 300);
 }
 
-// ====== GAME LOGIC ======
+// ====== UPDATED: Game logic with images ======
 function startGame(themeName) {
   currentTheme = themeName;
   const t = themes[themeName];
@@ -354,7 +436,6 @@ function startGame(themeName) {
   document.body.style.setProperty('--accent', t.accent);
   document.body.style.background = t.bg;
 
-  // sort words by length for difficulty progression, then shuffle within same length
   currentWords = [...t.words].sort((a, b) => a.w.length - b.w.length || Math.random() - 0.5);
   wordIdx = 0;
   charIdx = 0;
@@ -366,6 +447,12 @@ function startGame(themeName) {
   document.getElementById('star-num').textContent = stars;
 
   buildKeyboard();
+  
+  // Preload images for better performance
+  preloadThemeImages(themeName).then(() => {
+    console.log(`Preloaded images for ${themeName} theme`);
+  });
+  
   loadWord();
 }
 
@@ -380,18 +467,45 @@ function goMenu() {
 
 function loadWord() {
   if (wordIdx >= currentWords.length) {
-    // shuffle and restart
     currentWords.sort(() => Math.random() - 0.5);
     wordIdx = 0;
   }
   const item = currentWords[wordIdx];
   charIdx = 0;
 
-  const ed = document.getElementById('emoji-display');
-  ed.textContent = item.e;
-  ed.style.animation = 'none';
-  ed.offsetHeight;
-  ed.style.animation = 'float 2.5s ease-in-out infinite';
+  // UPDATED: Load image with fallback to emoji
+  const mainImg = document.getElementById('main-image');
+  const fallbackEmoji = document.getElementById('fallback-emoji');
+  const container = document.getElementById('image-display');
+  
+  container.classList.add('loading');
+  mainImg.style.display = 'none';
+  fallbackEmoji.classList.remove('show');
+  fallbackEmoji.textContent = item.e;
+  
+  preloadImage(item.img)
+    .then(() => {
+      mainImg.src = item.img;
+      mainImg.style.display = 'block';
+      mainImg.classList.remove('error');
+      container.classList.remove('loading');
+      
+      // Reset animation
+      container.style.animation = 'none';
+      container.offsetHeight;
+      container.style.animation = 'float 2.5s ease-in-out infinite';
+    })
+    .catch(() => {
+      // Fallback to emoji on image load failure
+      mainImg.style.display = 'none';
+      fallbackEmoji.classList.add('show');
+      container.classList.remove('loading');
+      
+      // Reset animation
+      container.style.animation = 'none';
+      container.offsetHeight;
+      container.style.animation = 'float 2.5s ease-in-out infinite';
+    });
 
   const wd = document.getElementById('word-display');
   wd.innerHTML = '';
@@ -433,21 +547,23 @@ function handleKey(ch) {
     playThemeSound(currentTheme);
     flashKey(ch, 'correct-flash');
 
-    // sparkle at emoji
-    const ed = document.getElementById('emoji-display');
-    const r = ed.getBoundingClientRect();
-    spawnSparkles(r.left + r.width / 2, r.top + r.height / 2, 4);
+    // UPDATED: Image-based sparkles
+    const container = document.getElementById('image-display');
+    const r = container.getBoundingClientRect();
+    spawnImageParticles(r.left + r.width / 2, r.top + r.height / 2, effectImages.sparkles, 4);
 
-    // bounce emoji
-    ed.style.animation = 'none';
-    ed.offsetHeight;
-    ed.style.animation = currentTheme === 'animals' ? 'shake .3s, float 2.5s ease-in-out .3s infinite' : 'popIn .3s, float 2.5s ease-in-out .3s infinite';
+    // Bounce animation
+    const mainImg = document.getElementById('main-image');
+    if (mainImg.style.display !== 'none') {
+      mainImg.style.animation = 'none';
+      mainImg.offsetHeight;
+      mainImg.style.animation = currentTheme === 'animals' ? 'shake .3s' : 'popIn .3s';
+    }
 
     updateLetterStates();
     updateProgress();
 
     if (charIdx >= item.w.length) {
-      // WORD COMPLETE
       wordComplete(item);
     } else {
       highlightKey(item.w[charIdx]);
@@ -456,36 +572,50 @@ function handleKey(ch) {
     // WRONG
     playWrong();
     flashKey(ch, 'wrong-flash');
-    const ed = document.getElementById('emoji-display');
-    ed.style.animation = 'none';
-    ed.offsetHeight;
-    ed.style.animation = 'shake .3s, float 2.5s ease-in-out .3s infinite';
+    const container = document.getElementById('image-display');
+    container.style.animation = 'none';
+    container.offsetHeight;
+    container.style.animation = 'shake .3s, float 2.5s ease-in-out .3s infinite';
   }
 }
 
 function wordComplete(item) {
   highlightKey('');
   playCelebration();
-  spawnConfetti(40);
+  spawnImageConfetti(40);
 
-  // theme-specific celebration
-  if (currentTheme === 'fruits') emojiRain(item.e, 10);
-  else if (currentTheme === 'animals') { animalRun(item.e); emojiRain(item.e, 5); }
-  else { emojiRain(item.e, 12); }
+  // UPDATED: Theme-specific image effects
+  if (currentTheme === 'fruits') imageRain(item.img, 10);
+  else if (currentTheme === 'animals') { 
+    animalRun(item.e); 
+    imageRain(item.img, 5); 
+  }
+  else { imageRain(item.img, 12); }
 
-  // show celebration
+  // UPDATED: Show image-based celebration
   const cel = document.getElementById('celebration');
-  cel.querySelector('.big-emoji').textContent = item.e;
+  const celImg = document.getElementById('celebration-image');
+  const celEmoji = cel.querySelector('.big-emoji');
+  
+  preloadImage(effectImages.celebration)
+    .then(() => {
+      celImg.src = effectImages.celebration;
+      celImg.style.display = 'block';
+      celEmoji.style.display = 'none';
+    })
+    .catch(() => {
+      celImg.style.display = 'none';
+      celEmoji.textContent = '🎉';
+      celEmoji.style.display = 'block';
+    });
+    
   cel.classList.add('active');
 
-  // speak word
   setTimeout(() => speakWord(item.w), 300);
 
-  // add star
   const r = document.getElementById('star-count').getBoundingClientRect();
   addStar(r.left, r.top);
 
-  // advance
   setTimeout(() => {
     cel.classList.remove('active');
     wordIdx++;
@@ -493,7 +623,7 @@ function wordComplete(item) {
   }, 2200);
 }
 
-// ====== KEYBOARD INPUT ======
+// ====== KEYBOARD INPUT (unchanged) ======
 document.addEventListener('keydown', (e) => {
   if (!document.getElementById('game').classList.contains('active')) return;
   const k = e.key.toLowerCase();
@@ -503,7 +633,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// prevent zoom on double-tap
 document.addEventListener('dblclick', e => e.preventDefault());
 </script>
 </body>
