@@ -13,11 +13,12 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 .screen.active{display:flex}
 
 /* MENU */
-#menu{justify-content:center;gap:clamp(16px,4vw,32px);padding:20px}
+#menu{justify-content:center;gap:clamp(16px,4vw,32px);padding:20px;flex-wrap:wrap}
 .menu-btn{border:none;border-radius:28px;padding:clamp(20px,5vw,40px) clamp(30px,8vw,60px);font-size:clamp(48px,12vw,100px);cursor:pointer;transition:transform .2s,box-shadow .2s;box-shadow:0 8px 0 rgba(0,0,0,.12);position:relative;animation:bob 2s ease-in-out infinite}
 .menu-btn:nth-child(1){background:linear-gradient(135deg,#ffe0e6,#ffc2d1);animation-delay:0s}
 .menu-btn:nth-child(2){background:linear-gradient(135deg,#d4f0ff,#b8e6ff);animation-delay:.3s}
 .menu-btn:nth-child(3){background:linear-gradient(135deg,#fff3d4,#ffe8a3);animation-delay:.6s}
+.menu-btn:nth-child(4){background:linear-gradient(135deg,#e1d4f7,#c8b5e8);animation-delay:.9s}
 .menu-btn:active{transform:scale(.92);box-shadow:0 4px 0 rgba(0,0,0,.12)}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 
@@ -90,6 +91,22 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 #star-burst{display:inline-block}
 @keyframes starBurst{0%{transform:scale(1)}50%{transform:scale(1.6) rotate(20deg)}100%{transform:scale(1)}}
 
+/* TIME TRIAL */
+#timer{font-size:clamp(28px,7vw,48px);font-weight:bold;color:#666;padding:8px 16px;background:#fff;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:color .3s}
+#timer.warning{color:#ff4444;animation:timerPulse .5s infinite}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+/* RESULT SCREEN */
+#result{justify-content:center;padding:20px;gap:clamp(20px,5vw,40px);text-align:center}
+#result h1{font-size:clamp(36px,9vw,72px);color:#ff6b9d;margin-bottom:clamp(16px,4vw,32px)}
+.result-item{background:#fff;border-radius:20px;padding:clamp(16px,4vw,24px);box-shadow:0 4px 12px rgba(0,0,0,.1);min-width:280px}
+.result-item .label{font-size:clamp(18px,4.5vw,24px);color:#666;margin-bottom:8px}
+.result-item .value{font-size:clamp(32px,8vw,56px);font-weight:bold;color:#333}
+.result-btn{border:none;border-radius:20px;padding:16px 32px;font-size:clamp(20px,5vw,28px);font-weight:bold;cursor:pointer;transition:transform .2s;margin:0 8px}
+.result-btn:active{transform:scale(.95)}
+.result-btn.primary{background:linear-gradient(135deg,#ff6b9d,#ff8fa3);color:#fff}
+.result-btn.secondary{background:linear-gradient(135deg,#e1d4f7,#c8b5e8);color:#333}
+
 /* Loading and error states */
 .loading{opacity:0.7;filter:blur(2px)}
 .error{opacity:0.3;filter:grayscale(1)}
@@ -101,12 +118,14 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 <button class="menu-btn" onclick="startGame('fruits')">🍎</button>
 <button class="menu-btn" onclick="startGame('animals')">🐶</button>
 <button class="menu-btn" onclick="startGame('sounds')">🎵</button>
+<button class="menu-btn" onclick="startTimeTrial()">⏱️</button>
 </div>
 
 <!-- GAME SCREEN -->
 <div id="game" class="screen">
 <div id="top-bar">
 <button class="icon-btn" onclick="goMenu()">⬅️</button>
+<div id="timer" style="display:none">03:00</div>
 <div id="theme-icon"></div>
 <div id="star-count"><span id="star-burst" class="star-icon">⭐</span><span id="star-num">0</span></div>
 </div>
@@ -121,6 +140,27 @@ body{background:var(--bg);display:flex;flex-direction:column;align-items:center;
 </div>
 <div id="keyboard"></div>
 <button class="icon-btn" style="position:absolute;bottom:8px;right:12px;font-size:28px" id="music-toggle" onclick="toggleMusic()">🔇</button>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="result" class="screen">
+<h1>🎉 結果発表！ 🎉</h1>
+<div class="result-item">
+<div class="label">クリアした単語数</div>
+<div class="value" id="result-words">0</div>
+</div>
+<div class="result-item">
+<div class="label">獲得スター数</div>
+<div class="value" id="result-stars">⭐ 0</div>
+</div>
+<div class="result-item">
+<div class="label">正答率</div>
+<div class="value" id="result-accuracy">0%</div>
+</div>
+<div style="margin-top:clamp(20px,5vw,40px)">
+<button class="result-btn primary" onclick="restartTimeTrial()">⏱️ もう一回</button>
+<button class="result-btn secondary" onclick="goMenu()">🏠 メニューに戻る</button>
+</div>
 </div>
 
 <!-- UPDATED: Image-based celebration -->
@@ -182,6 +222,17 @@ const kbRows = ['qwertyuiop','asdfghjkl','zxcvbnm'];
 let currentTheme = null, currentWords = [], wordIdx = 0, charIdx = 0, stars = 0, musicOn = false, bgmOsc = null, bgmGain = null;
 let audioCtx = null;
 let imageCache = new Map(); // Image preloading cache
+
+// ====== TIME TRIAL STATE ======
+let isTimeTrial = false;
+let timeLeft = 180; // 3 minutes in seconds
+let timerInterval = null;
+let trialStats = {
+  wordsCleared: 0,
+  starsEarned: 0,
+  totalKeys: 0,
+  correctKeys: 0
+};
 
 // ====== IMAGE PRELOADING ======
 function preloadImage(src) {
@@ -426,6 +477,7 @@ function flashKey(ch, cls) {
 
 // ====== UPDATED: Game logic with images ======
 function startGame(themeName) {
+  isTimeTrial = false;
   currentTheme = themeName;
   const t = themes[themeName];
   document.body.style.setProperty('--bg', t.bg);
@@ -441,6 +493,7 @@ function startGame(themeName) {
   document.getElementById('theme-icon').textContent = t.icon;
   document.getElementById('theme-icon').style.fontSize = '32px';
   document.getElementById('star-num').textContent = stars;
+  document.getElementById('timer').style.display = 'none';
 
   buildKeyboard();
   
@@ -452,18 +505,137 @@ function startGame(themeName) {
   loadWord();
 }
 
+// ====== TIME TRIAL FUNCTIONS ======
+function startTimeTrial() {
+  isTimeTrial = true;
+  currentTheme = 'timetrial';
+  
+  // Set purple theme colors for time trial
+  document.body.style.setProperty('--bg', '#f8f5ff');
+  document.body.style.setProperty('--accent', '#9b59b6');
+  document.body.style.background = '#f8f5ff';
+
+  // Create mixed words from all themes
+  const allWords = [];
+  Object.values(themes).forEach(theme => {
+    allWords.push(...theme.words);
+  });
+  currentWords = allWords.sort(() => Math.random() - 0.5);
+  
+  wordIdx = 0;
+  charIdx = 0;
+  timeLeft = 180; // 3 minutes
+  trialStats = { wordsCleared: 0, starsEarned: 0, totalKeys: 0, correctKeys: 0 };
+
+  document.getElementById('menu').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+  document.getElementById('theme-icon').textContent = '⏱️';
+  document.getElementById('theme-icon').style.fontSize = '32px';
+  document.getElementById('star-num').textContent = stars;
+  document.getElementById('timer').style.display = 'block';
+
+  buildKeyboard();
+  
+  // Preload images from all themes
+  Promise.allSettled(Object.keys(themes).map(preloadThemeImages));
+  
+  startTimer();
+  loadWord();
+}
+
+function startTimer() {
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    
+    if (timeLeft <= 30 && timeLeft > 0) {
+      document.getElementById('timer').classList.add('warning');
+    }
+    
+    if (timeLeft <= 0) {
+      endTimeTrial();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  document.getElementById('timer').textContent = display;
+}
+
+function endTimeTrial() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
+  showResults();
+}
+
+function showResults() {
+  document.getElementById('game').classList.remove('active');
+  document.getElementById('result').classList.add('active');
+  
+  // Calculate accuracy
+  const accuracy = trialStats.totalKeys > 0 ? 
+    Math.round((trialStats.correctKeys / trialStats.totalKeys) * 100) : 0;
+  
+  document.getElementById('result-words').textContent = trialStats.wordsCleared;
+  document.getElementById('result-stars').textContent = `⭐ ${trialStats.starsEarned}`;
+  document.getElementById('result-accuracy').textContent = `${accuracy}%`;
+  
+  // Celebration effects
+  playCelebration();
+  spawnConfetti(60);
+  setTimeout(() => emojiRain('🎉', 15), 500);
+}
+
+function restartTimeTrial() {
+  document.getElementById('result').classList.remove('active');
+  document.getElementById('timer').classList.remove('warning');
+  startTimeTrial();
+}
+
 function goMenu() {
   document.getElementById('game').classList.remove('active');
+  document.getElementById('result').classList.remove('active');
   document.getElementById('menu').classList.add('active');
   document.body.style.background = '#fff5f5';
+  document.getElementById('timer').style.display = 'none';
+  document.getElementById('timer').classList.remove('warning');
+  
+  // Stop time trial timer if running
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
+  isTimeTrial = false;
   stopBGM();
   musicOn = false;
   document.getElementById('music-toggle').textContent = '🔇';
 }
 
 function loadWord() {
+  // Check if time trial ended while word was being completed
+  if (isTimeTrial && timeLeft <= 0) {
+    return;
+  }
+  
   if (wordIdx >= currentWords.length) {
-    currentWords.sort(() => Math.random() - 0.5);
+    if (isTimeTrial) {
+      // Reshuffle all words for continuous play in time trial
+      const allWords = [];
+      Object.values(themes).forEach(theme => {
+        allWords.push(...theme.words);
+      });
+      currentWords = allWords.sort(() => Math.random() - 0.5);
+    } else {
+      currentWords.sort(() => Math.random() - 0.5);
+    }
     wordIdx = 0;
   }
   const item = currentWords[wordIdx];
@@ -532,15 +704,30 @@ function updateProgress() {
 }
 
 function handleKey(ch) {
-  if (!currentTheme || wordIdx >= currentWords.length) return;
+  if ((!currentTheme && !isTimeTrial) || wordIdx >= currentWords.length) return;
   const item = currentWords[wordIdx];
   const expected = item.w[charIdx];
+
+  // Track stats for time trial
+  if (isTimeTrial) {
+    trialStats.totalKeys++;
+  }
 
   if (ch === expected) {
     // CORRECT
     charIdx++;
+    
+    // Track correct keys for time trial
+    if (isTimeTrial) {
+      trialStats.correctKeys++;
+    }
+    
     playCorrect(charIdx - 1, item.w.length);
-    playThemeSound(currentTheme);
+    if (!isTimeTrial) {
+      playThemeSound(currentTheme);
+    } else {
+      playThemeSound(Math.random() < 0.33 ? 'fruits' : Math.random() < 0.5 ? 'animals' : 'sounds');
+    }
     flashKey(ch, 'correct-flash');
 
     // UPDATED: Image-based sparkles
@@ -553,7 +740,8 @@ function handleKey(ch) {
     if (mainImg.style.display !== 'none') {
       mainImg.style.animation = 'none';
       mainImg.offsetHeight;
-      mainImg.style.animation = currentTheme === 'animals' ? 'shake .3s' : 'popIn .3s';
+      const themeForAnim = isTimeTrial ? (Math.random() < 0.33 ? 'animals' : 'other') : currentTheme;
+      mainImg.style.animation = themeForAnim === 'animals' ? 'shake .3s' : 'popIn .3s';
     }
 
     updateLetterStates();
@@ -578,17 +766,36 @@ function handleKey(ch) {
 function wordComplete(item) {
   highlightKey('');
   playCelebration();
-  spawnConfetti(40);
-
-  // UPDATED: Theme-specific image effects
-  if (currentTheme === 'fruits') emojiRain(item.e, 10);
-  else if (currentTheme === 'animals') { 
-    animalRun(item.e); 
-    emojiRain(item.e, 5); 
+  
+  // Track stats for time trial
+  if (isTimeTrial) {
+    trialStats.wordsCleared++;
+    trialStats.starsEarned++;
+    spawnConfetti(20); // Less confetti for faster pace in time trial
+  } else {
+    spawnConfetti(40);
   }
-  else { emojiRain(item.e, 12); }
 
-  // UPDATED: Show image-based celebration
+  // UPDATED: Theme-specific image effects (random for time trial)
+  if (isTimeTrial) {
+    const effects = ['fruits', 'animals', 'sounds'];
+    const randomTheme = effects[Math.floor(Math.random() * effects.length)];
+    if (randomTheme === 'fruits') emojiRain(item.e, 6);
+    else if (randomTheme === 'animals') { 
+      animalRun(item.e); 
+      emojiRain(item.e, 3); 
+    }
+    else { emojiRain(item.e, 8); }
+  } else {
+    if (currentTheme === 'fruits') emojiRain(item.e, 10);
+    else if (currentTheme === 'animals') { 
+      animalRun(item.e); 
+      emojiRain(item.e, 5); 
+    }
+    else { emojiRain(item.e, 12); }
+  }
+
+  // UPDATED: Show image-based celebration (shorter for time trial)
   const cel = document.getElementById('celebration');
   const celImg = document.getElementById('celebration-image');
   const celEmoji = cel.querySelector('.big-emoji');
@@ -604,11 +811,12 @@ function wordComplete(item) {
   const r = document.getElementById('star-count').getBoundingClientRect();
   addStar(r.left, r.top);
 
+  const celebrationDelay = isTimeTrial ? 1200 : 2200; // Faster pace for time trial
   setTimeout(() => {
     cel.classList.remove('active');
     wordIdx++;
     loadWord();
-  }, 2200);
+  }, celebrationDelay);
 }
 
 // ====== KEYBOARD INPUT (unchanged) ======
